@@ -2130,12 +2130,13 @@
             "nr": 220, 
             "name": "clone",
             "params":[
-                {"name": "fn", "type": "ptr"},
-                {"name": "stack", "type": "ptr"},
                 {"name": "flags", "type": "int"},
-                {"name": "arg0", "type": "int"},
-                {"name": "arg1", "type": "int"},
-                {"name": "arg2", "type": "int"},
+                {"name": "stack", "type": "ptr"},
+                {"name": "parent_tidptr", "type": "ptr"},
+                {"name": "new_tls", "type": "ptr"},
+                {"name": "child_tidptr", "type": "ptr"},
+                {"name": "fn", "type": "ptr"},
+                {"name": "arg", "type": "ptr"},
                 {"name": "ret", "type": "int"}
             ]
         },
