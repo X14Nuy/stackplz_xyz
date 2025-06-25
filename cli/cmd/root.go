@@ -153,6 +153,7 @@ func persistentPreRunEFunc(command *cobra.Command, args []string) error {
     if err = gconfig.RestoreAssets(); err != nil {
         return err
     }
+    event.InitCLib()
     gconfig.InitLibraryDirs()
 
     if gconfig.Rpc {

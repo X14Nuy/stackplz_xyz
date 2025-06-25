@@ -4,46 +4,78 @@
 #include <stdlib.h>
 
 typedef const char* (*FPTR)(char*, void*, void*, void*);
-FPTR fptr = NULL;
-
 typedef const char* (*FPTRV2)(int, void*, void*, void*);
-FPTRV2 fptrv2 = NULL;
 
-int has_dlopen = 0;
+static void*  g_handle = NULL;
+static FPTR   g_fptr = NULL;
+static FPTRV2 g_fptrv2 = NULL;
 
-void setup(char* dl_path) {
+int init_stack_unwinder(const char* dl_path) {
+    if (g_handle != NULL) {
+        // 已经初始化
+        return 0;
+    }
 
-    void* handle;
     char full_path[256];
+    snprintf(full_path, sizeof(full_path), "%s/%s", dl_path, "libstackplz.so");
 
-    sprintf(full_path, "%s/%s", dl_path, "libstackplz.so");
-    handle = dlopen(full_path, RTLD_NOW);
-    fptr = (FPTR)dlsym(handle, "StackPlz");
-    fptrv2 = (FPTRV2)dlsym(handle, "StackPlzV2");
+    g_handle = dlopen(full_path, RTLD_NOW);
+    if (g_handle == NULL) {
+        fprintf(stderr, "Failed to dlopen %s: %s\n", full_path, dlerror());
+        return -1;
+    }
 
-    if (has_dlopen == 0) {
-        has_dlopen = 1;
+    // 清除旧的dlerror信息
+    dlerror(); 
+    g_fptr = (FPTR)dlsym(g_handle, "StackPlz");
+    const char* dlsym_error = dlerror();
+    if (dlsym_error != NULL) {
+        fprintf(stderr, "Failed to dlsym StackPlz: %s\n", dlsym_error);
+        dlclose(g_handle);
+        g_handle = NULL;
+        return -1;
+    }
+
+    dlerror();
+    g_fptrv2 = (FPTRV2)dlsym(g_handle, "StackPlzV2");
+    dlsym_error = dlerror();
+    if (dlsym_error != NULL) {
+        fprintf(stderr, "Failed to dlsym StackPlzV2: %s\n", dlsym_error);
+        dlclose(g_handle);
+        g_handle = NULL;
+        g_fptr = NULL;
+        return -1;
+    }
+
+    return 0;
+}
+
+void close_stack_unwinder() {
+    if (g_handle != NULL) {
+        dlclose(g_handle);
+        g_handle = NULL;
+        g_fptr = NULL;
+        g_fptrv2 = NULL;
     }
 }
 
-const char* get_stack(char* dl_path, char* map_buffer, void* opt, void* regs_buf, void* stack_buf)
-{
-    if (has_dlopen == 1) {
-        return (*fptr)(map_buffer, opt, regs_buf, stack_buf);
+const char* get_stack(char* map_buffer, void* opt, void* regs_buf, void* stack_buf) {
+    if (g_fptr == NULL) {
+        // 如果未初始化，返回NULL，让上层处理
+        return NULL;
     }
-    
-    setup(dl_path);
-
-    return (*fptr)(map_buffer, opt, regs_buf, stack_buf);
+    return (*g_fptr)(map_buffer, opt, regs_buf, stack_buf);
 }
 
-const char* get_stackv2(char* dl_path, int pid, void* opt, void* regs_buf, void* stack_buf)
-{
-    if (has_dlopen == 1) {
-        return (*fptrv2)(pid, opt, regs_buf, stack_buf);
+const char* get_stackv2(int pid, void* opt, void* regs_buf, void* stack_buf) {
+    if (g_fptrv2 == NULL) {
+        return NULL;
     }
-    
-    setup(dl_path);
+    return (*g_fptrv2)(pid, opt, regs_buf, stack_buf);
+}
 
-    return (*fptrv2)(pid, opt, regs_buf, stack_buf);
+void free_stack_str(char* str) {
+    if (str != NULL) {
+        free(str);
+    }
 }
