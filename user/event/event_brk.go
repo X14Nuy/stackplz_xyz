@@ -132,7 +132,10 @@ func (this *BrkEvent) ParseContextStack() {
             }
             return
         }
-        this.Stackinfo = ParseStack(content, this.GetOpt(), this.UnwindBuffer)
+        this.Stackinfo, err = ParseStack(content, this.GetOpt(), this.UnwindBuffer)
+        if err != nil {
+            this.logger.Printf("Error when ParseStack:%v", err)
+        }
     } else if this.rec.ExtraOptions.ShowRegs {
         err := this.RegsBuffer.ParseContext(this.buf)
         if err != nil {
