@@ -2,7 +2,7 @@
 
 [wbstack/watch breakpoint stack/stackplz plus](https://blog.seeflower.dev/archives/339/)
 
-stackplz是一款基于eBPF的堆栈追踪工具，目前仅适用于Android平台
+stackplz(stack please)是一款基于eBPF的堆栈追踪工具，目前仅适用于Android平台
 
 特性：
 
