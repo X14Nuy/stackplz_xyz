@@ -268,6 +268,41 @@ static __noinline u32 read_args(program_data_t* p, point_args_t* point_args, op_
                 op_ctx->save_index += 1;
                 break;
             }
+            case OP_SAVE_STRING16:
+            {
+                // fix memory tag
+                op_ctx->read_addr = op_ctx->read_addr & 0xffffffffffff;
+                u32 old_off = p->event->buf_off;
+                int save_string_status = save_utf16_to_buf(p->event, (void*) op_ctx->read_addr, op_ctx->save_index);
+                if (save_string_status == 0) {
+                    // 失败的情况存一个空数据 暂时没有遇到 有待测试
+                    save_bytes_to_buf(p->event, 0, 0, op_ctx->save_index);
+                } else {
+                   op_ctx->str_len = p->event->buf_off - (old_off + sizeof(int) + 1);
+                }
+                op_ctx->save_index += 1;
+                break;
+            }
+            case OP_SAVE_PTR_STRING16:
+            {
+                u64 ptr = op_ctx->read_addr & 0xffffffffffff;
+                bpf_probe_read_user(&ptr, PTR_SIZE, (void*) ptr);
+                save_to_submit_buf(p->event, (void *)&ptr, sizeof(ptr), op_ctx->save_index);
+                op_ctx->save_index += 1;
+                // 每次取出后使用前都要 fix 很坑
+                ptr = ptr & 0xffffffffffff;
+                int status = save_utf16_to_buf(p->event, (void*) ptr, op_ctx->save_index);
+                if (status == 0) {
+                    // save_str_to_buf 中应当将 bpf_probe_read_str 返回 0 时视为字符串为空
+                    // 地址异常时 bpf_probe_read_str 返回为负数 此时将认为字符串数组读取结束
+                    // 这里需要为字符串数组的读取设定一个标志 和空字符串的情况区分开
+                    save_bytes_to_buf(p->event, 0, STRARR_MAGIC_LEN, op_ctx->save_index);
+                    // 为读取字符串数组设计的
+                    op_ctx->loop_count = op_ctx->break_count;
+                }
+                op_ctx->save_index += 1;
+                break;
+            }
             case OP_READ_STD_STRING:
             {
                 // 搭配 OP_SAVE_STRING 使用 这里仅计算实际的字符串地址
@@ -281,6 +316,22 @@ static __noinline u32 read_args(program_data_t* p, point_args_t* point_args, op_
                     bpf_probe_read_user(&ptr, sizeof(ptr), (void*) ptr);
                 }
                 op_ctx->read_addr = ptr;
+                break;
+            }
+            case OP_READ_IL2CPP_STRING:
+            {
+                u64 obj = op_ctx->read_addr;
+                // // 读取 length
+                // int32_t len = 0;
+                // bpf_probe_read_user(&len, sizeof(len), (void*)(obj + 0x10));
+                // if (len <= 0 || len > MAX_STRING_SIZE)
+                //     len = MAX_STRING_SIZE;
+                // // UTF16 字节数
+                // int byte_len = len * 2;
+                // 字符串内容地址
+                u64 str_ptr = obj + 0x14;
+                // 保存给 OP_SAVE_STRING16 使用
+                op_ctx->read_addr = str_ptr;
                 break;
             }
             default:

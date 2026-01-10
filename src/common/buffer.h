@@ -194,6 +194,13 @@ static __always_inline int save_str_to_buf(event_data_t *event, void *ptr, u8 in
     return 0;
 }
 
+static __always_inline int save_utf16_to_buf(event_data_t *event, void *ptr, u8 index)
+{
+    // UTF16 最大字节数（必须是偶数）
+    int max_bytes = 512;
+    // 直接调用 save_bytes_to_buf
+    return save_bytes_to_buf(event, ptr, max_bytes, index);
+}
 
 static __always_inline int events_perf_submit(program_data_t *p, u32 id)
 {

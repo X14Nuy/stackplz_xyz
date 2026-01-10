@@ -218,6 +218,7 @@ func PreRegister() {
 	R_POINTER(GetArgType(UINT), true)
 	r_STD_STRING()
 	r_STRING_ARRAY()
+	r_STRING16_ARRAY()
 	r_STACK_T()
 	PRE_R_STRUCT("timespec", TIMESPEC, &Arg_Timespec{})
 	r_SIGSET()

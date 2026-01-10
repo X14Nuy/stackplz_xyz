@@ -110,7 +110,7 @@ func (this *ParamConfig) GetPointArg(arg_index, point_type uint32) *PointArg {
 		}
 		point_arg.SetTypeIndex(at.GetTypeIndex())
 		point_arg.SetGroupType(EBPF_UPROBE_ENTER)
-	case "str", "std":
+	case "str", "std", "str16", "il2cpp_string":
 		// 根据名称指定类型
 		// 支持自定义类型 但是需要提前在配置文件中写好
 		point_arg.SetTypeByName(type_name)

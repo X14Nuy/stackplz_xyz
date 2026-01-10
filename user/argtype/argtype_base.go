@@ -614,6 +614,18 @@ func (this *ARG_STRING) Clone() IArgType {
 	return &ARG_STRING{*p}
 }
 
+type ARG_STRING16 struct {
+	ARG_BUFFER
+}
+
+func (this *ARG_STRING16) Clone() IArgType {
+	p, ok := (this.ARG_BUFFER.Clone()).(*ARG_BUFFER)
+	if !ok {
+		panic("ARG_STRING16 clone failed")
+	}
+	return &ARG_STRING16{*p}
+}
+
 type ARG_STRUCT struct {
 	ArgType
 }
@@ -734,7 +746,12 @@ func init() {
 	RegisterAlias("buf", "buffer")
 	Register(&ARG_STRING{}, "string", TYPE_STRING, STRING, 0)
 	init_STRING()
+	Register(&ARG_STRING16{}, "string16", TYPE_STRING, STRING16, 0)
+	init_STRING16()
+	Register(&ARG_STRING16{}, "il2cpp_string", TYPE_STRING, IL2CPP_STRING, 0)
+	init_IL2CPP_STRING()
 	RegisterAlias("str", "string")
+	RegisterAlias("str16", "string16")
 
 	Register(&ARG_STRUCT{}, "struct", TYPE_STRUCT, STRUCT, 0)
 	Register(&ARG_ARRAY{}, "array", TYPE_ARRAY, ARRAY, 0)
