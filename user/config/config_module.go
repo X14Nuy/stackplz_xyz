@@ -113,6 +113,12 @@ func (this *StackUprobeConfig) ParseArgType(arg_str string, point_arg *PointArg)
             point_arg.SetTypeIndex(STD_STRING)
         }
         point_arg.SetGroupType(EBPF_UPROBE_ENTER)
+    case "str16":
+		point_arg.SetTypeIndex(STRING16)
+		point_arg.SetGroupType(EBPF_UPROBE_ENTER)
+	case "il2cpp_string":
+		point_arg.SetTypeIndex(IL2CPP_STRING)
+		point_arg.SetGroupType(EBPF_UPROBE_ENTER)
     case "ptr":
         point_arg.SetTypeIndex(POINTER)
     case "ptr_arr", "uint_arr", "int_arr":

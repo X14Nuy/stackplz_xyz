@@ -1,0 +1,19 @@
+{
+    "type": "uprobe",
+    "library": "libtest.so",
+    "points": [
+        {
+            "name": "testUTF16",
+            "params": [
+                {
+                    "type": "str16",
+                    "reg": "x0"
+                },
+                {
+                    "type": "il2cpp_string",
+                    "reg": "x1"
+                }
+            ]
+        }
+    ]
+}

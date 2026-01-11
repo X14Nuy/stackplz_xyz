@@ -63,6 +63,33 @@ func init_STRING() IArgType {
 	return at
 }
 
+func init_STRING16() IArgType {
+	at := GetArgType(STRING16)
+	at.AddOp(OPC_SAVE_STRING16)
+	(at).(IArgStructSetting).SetParseImpl(&Arg_string16{})
+	return at
+}
+
+func init_IL2CPP_STRING() IArgType {
+	at := GetArgType(IL2CPP_STRING)
+	at.AddOp(OPC_READ_IL2CPP_STRING) // 计算 UTF16 内容地址 + 长度
+	at.AddOp(OPC_SAVE_STRING16)      // 保存 UTF16 字节
+	// at.SetParseCB(parse_STRING16)      // Go 端 UTF16 → UTF8
+	(at).(IArgStructSetting).SetParseImpl(&Arg_string16{})
+	return at
+}
+
+func r_STRING16_ARRAY() IArgType {
+	at := RegisterNew("string16_array", STRUCT)
+	at.AddOp(OPC_SET_BREAK_COUNT.NewValue(uint64(MAX_LOOP_COUNT)))
+	at.AddOp(OPC_FOR_BREAK)
+	at.AddOp(OPC_SAVE_PTR_STRING16)
+	at.AddOp(OPC_ADD_OFFSET.NewValue(uint64(unsafe.Sizeof(uintptr(0))))) // 8 bytes on x86_64
+	at.AddOp(OPC_FOR_BREAK)
+	(at).(IArgStructSetting).SetParseImpl(&Arg_string16{})
+	return at
+}
+
 // func PRE_R_STRUCT(arg_name string, type_index uint32, arg IParseStruct) IArgType {
 // 	at := RegisterPre(arg_name, type_index, STRUCT)
 // 	at.SetSize(arg.GetSize())

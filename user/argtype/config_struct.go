@@ -9,6 +9,7 @@ import (
 	"stackplz/user/util"
 	"strings"
 	"syscall"
+	"unicode/utf16"
 	"unsafe"
 )
 
@@ -154,6 +155,55 @@ func (this *Arg_string) MarshalJSON() ([]byte, error) {
 	}{
 		ArgStructAlias: (*ArgStructAlias)(&this.Arg_struct),
 		Value:          util.B2STrim(this.ArgPayload),
+	})
+}
+
+func utf16leToUtf8(b []byte) string {
+	if len(b) < 2 {
+		return ""
+	}
+	u16s := make([]uint16, len(b)/2)
+	for i := 0; i < len(u16s); i++ {
+		u16s[i] = binary.LittleEndian.Uint16(b[i*2:])
+	}
+	// 找到第一个 0x0000
+	end := len(u16s)
+	for i, v := range u16s {
+		if v == 0 {
+			end = i
+			break
+		}
+	}
+	u16s = u16s[:end]
+	return string(utf16.Decode(u16s))
+}
+
+type Arg_string16 struct {
+	Arg_buffer
+}
+
+func (this *Arg_string16) Clone() IParseStruct {
+	return &Arg_string16{}
+}
+
+func (this *Arg_string16) HexFormat(color bool) string {
+	return this.Format()
+}
+
+func (this *Arg_string16) Format() string {
+	// UTF‑16LE → UTF‑8
+	s := utf16leToUtf8(this.ArgPayload)
+	return fmt.Sprintf("(%s)", s)
+}
+
+func (this *Arg_string16) MarshalJSON() ([]byte, error) {
+	type ArgStructAlias Arg_struct
+	return json.Marshal(&struct {
+		*ArgStructAlias
+		Value string `json:"value"`
+	}{
+		ArgStructAlias: (*ArgStructAlias)(&this.Arg_struct),
+		Value:          utf16leToUtf8(this.ArgPayload),
 	})
 }
 
