@@ -4,30 +4,30 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-    "bufio"
-    "context"
-    "errors"
-    "fmt"
-    "io"
-    "io/ioutil"
-    "log"
-    "os"
-    "os/signal"
-    "path"
-    "stackplz/assets"
-    "stackplz/user/config"
-    "stackplz/user/event"
-    "stackplz/user/event_parser"
-    "stackplz/user/module"
-    "stackplz/user/rpc"
-    "stackplz/user/util"
-    "strconv"
-    "strings"
-    "sync"
-    "syscall"
+	"bufio"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/signal"
+	"path"
+	"stackplz/assets"
+	"stackplz/user/config"
+	"stackplz/user/event"
+	"stackplz/user/event_parser"
+	"stackplz/user/module"
+	"stackplz/user/rpc"
+	"stackplz/user/util"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
 
-    "github.com/spf13/cobra"
-    "golang.org/x/exp/slices"
+	"github.com/spf13/cobra"
+	"golang.org/x/exp/slices"
 )
 
 var Logger *log.Logger
@@ -661,6 +661,7 @@ func init() {
     rootCmd.PersistentFlags().StringVar(&gconfig.ParseFile, "parse", "", "parse perf data as json or readable format")
     // 常规ELF库hook设定
     rootCmd.PersistentFlags().StringVarP(&gconfig.Library, "lib", "l", "libc.so", "lib name or lib full path, default is libc.so")
+    rootCmd.PersistentFlags().StringArrayVarP(&gconfig.LibraryDirs, "libdirs", "", []string{}, "lib dirs, library directory path or apk path")
     rootCmd.PersistentFlags().StringArrayVarP(&gconfig.HookPoint, "point", "w", []string{}, "hook point config, e.g. strstr+0x0[str,str] write[int,buf:128,int]")
     rootCmd.PersistentFlags().StringVar(&gconfig.RegName, "reg", "", "get the offset of reg")
     rootCmd.PersistentFlags().BoolVarP(&gconfig.DumpRet, "dumpret", "", false, "dump ret offset for symbol")
