@@ -1,0 +1,92 @@
+stackplz KPM host verification report
+Generated: 2026-08-30 Asia/Shanghai
+Git baseline: 62fc9e8; verified implementation remains uncommitted in workspace
+Physical device runtime: NOT TESTED (device unavailable 2026-08-30)
+
+Environment
+-----------
+Python: 3.10.12
+Go: go1.27.0 linux/amd64
+Host C compiler: GCC 11.4.0
+Static analyzer: Ubuntu clang 11.1.0-6
+
+Results
+-------
+1. python3 -m unittest discover -s tools/tests -v
+   PASS, 14/14 tests.
+   Covered deterministic profile generation, strict schema/offset checks,
+   KPM ELF architecture/section checks, exact import allowlisting, and
+   pinned-SDK export proof rules. The final three source-contract tests prove
+   that KPatch profile reads resolve and use copy_from_kernel_nofault before
+   validating candidate offsets.
+
+2. python3 tools/gen_kpm_profiles.py --check
+   PASS, generated C and Go registries are current.
+
+3. GOPROXY=off go test ./user/kpm ./user/event ./user/util
+   ./user/module ./cli/cmd -race -count=1
+   PASS:
+     stackplz/user/kpm
+     stackplz/user/event
+     stackplz/user/util
+     stackplz/user/module
+     stackplz/cli/cmd
+
+4. make kpm-host-test
+   PASS, 9/9 normal C suites and 9/9 ASan+UBSan suites.
+   Suites:
+     test_command
+     test_ring
+     test_profile
+     test_task
+     test_debug
+     test_arm64_encoding
+     test_hooks
+     test_async
+     test_control
+   Deterministic debug model:
+     seed=0x5a17c0de
+     steps=100000
+
+5. GOPROXY=off go test ./... -count=1
+   PASS for every repository package; packages without tests compiled.
+
+6. GOPROXY=off go vet ./...
+   PASS, no diagnostics.
+
+7. python3 -m compileall -q tools
+   PASS.
+
+8. gofmt -d on new/self-contained KPM Go files
+   PASS, no output. Legacy root/config/event files intentionally retain the
+   upstream repository style to avoid unrelated whole-file formatting churn.
+
+9. clang --analyze on KPM core, ARM64 host adapter, hook, async, runtime,
+   and control sources
+   PASS, no diagnostics.
+
+Focused Go/C regressions also cover a task command containing whitespace and
+module startup rollback when a later module fails Init. The former is carried
+as a fixed 16-byte comm_hex status field; the latter never calls Close on a
+module whose Init did not complete.
+The final CLI race run also covers `task-source=auto` with an explicit UID:
+proc visibility is still probed and a hidden task falls back to KPM while the
+operator-supplied UID remains authoritative.
+
+Sanitizer interpretation
+------------------------
+ASan and UBSan are host test instrumentation. ASan checked memory-safety
+failures such as out-of-bounds and use-after-free; UBSan checked undefined C
+behavior. They are not included in the Android/KPM artifacts.
+
+Go's race detector passed all Go integration packages. A separate C
+ThreadSanitizer run is not claimed: the available VM runtime terminated with
+"unexpected memory mapping", an environment limitation already reproduced
+during implementation.
+
+Claim boundary
+--------------
+These results prove deterministic host logic, parser bounds, state-machine
+invariants, rollback behavior, and race/sanitizer cleanliness in the stated
+environment. They do not prove target-kernel ABI correctness or physical
+device behavior; every such row remains NOT TESTED.

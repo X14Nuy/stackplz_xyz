@@ -7,7 +7,12 @@ user/assets/
 
 *.log
 *.apk
+__pycache__/
+*.py[cod]
 assets/ebpf_probe.go
+kpm/build/
+kpm/tests/build/
+kpm/stackplz-kpm.kpm
 
 # Allow
 !user/assets/placeholder

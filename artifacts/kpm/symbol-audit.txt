@@ -1,0 +1,103 @@
+stackplz KPM source and symbol audit
+Generated: 2026-08-30
+Git baseline: 62fc9e8; audited implementation remains uncommitted in workspace
+
+Record-only boundary
+--------------------
+Scope searched:
+  kpm/core
+  kpm/include
+  kpm/platform
+  cli and user KPM integration code
+
+No match was found for:
+  perf_event_create_kernel_counter
+  register_user_hw_breakpoint / register_hw_breakpoint
+  perf_event_open
+  kmalloc / kzalloc / vmalloc / malloc / calloc / realloc / free
+  msleep / ssleep / usleep / schedule_timeout
+  printk / pr_info / pr_warn / pr_err / pr_debug
+  copy_from_user / get_user / access_process_vm / process_vm_readv
+  for_each_process / for_each_thread / next_task
+  kpm load / kpm unload / insmod / modprobe
+  Magisk service.d / post-fs-data persistence paths
+
+The Go client has one external process boundary:
+  user/kpm/command.go:38
+  r.run(ctx, binary, "kpm", "ctl0", r.module, command)
+It can issue bounded ctl0 commands only. It contains no load, unload, install,
+or persistence command.
+
+Exact KPM undefined-symbol set
+------------------------------
+  compat_copy_to_user
+  hook_unwrap_remove
+  hook_wrap
+  kallsyms_lookup_name
+  kf_memchr
+  kf_memcmp
+  kf_memcpy
+  kf_memset
+  kf_strcmp
+  kf_strlen
+  kf_strncmp
+  kpm_safe_unload_v1
+  kpver
+  kver
+
+tools/check_kpm_elf.py accepted this exact set and proved an exact
+KP_EXPORT_SYMBOL declaration for every entry in KPatch-Next commit
+0fe6d142266b80e5aa445a7ea1534f88a8f33a35. The set contains no libc,
+allocator, compiler-atomic, or perf breakpoint registration import.
+
+Hook audit
+----------
+Five hook IDs are installed in fixed order:
+  finish_task_switch
+  do_exit
+  breakpoint_handler
+  watchpoint_handler
+  single_step_handler
+
+kpm/platform/kpatch/hooks.c records each successful install. Every validation
+or install failure calls spz_hooks_remove. Removal walks SPZ_HOOK_COUNT down to
+zero, unwraps only recorded slots, clears each installed bit, then performs
+one task-RCU quiescence callback after all removals. test_hooks covers every
+failure point, reverse rollback count, and quiescence ordering.
+
+The module then uses a per-CPU barrier and handler/control gates before zeroing
+runtime state. Async work is fixed module storage, uses flush_work for
+quiescence, and has no dynamic allocation.
+
+Profile-validation read audit
+-----------------------------
+Before candidate offsets are dereferenced, the KPatch adapter resolves the
+closed profile's copy_from_kernel_nofault symbol. Banner, CPU-count, init-task,
+credential, per-CPU-offset, and debug-owner validation reads fail closed on a
+nofault-copy error. tools/tests/test_kpatch_platform_safety.py locks this source
+contract; the final Python suite passed all 14 tests.
+
+Direct-register ownership audit
+-------------------------------
+Raw ARM64 register access is isolated in:
+  kpm/platform/arm64/debug_regs.c
+
+The core never accepts raw register values. It derives controls from a bounded
+breakpoint request and:
+  1. selects only a slot whose owner is zero and enable bit is clear;
+  2. snapshots value, control, and MDSCR before writing;
+  3. rolls back a partially completed arm;
+  4. before hit, step, rollback, or restore, re-reads owner/value/control;
+  5. restores only when the live image exactly matches the module's saved
+     ownership state;
+  6. enters QUARANTINED and refuses blind writes on disagreement.
+
+test_debug covers exact restore, occupied slots, state/register disagreement,
+one-shot, repeat single-step, pre-existing SS, CPU migration, interference,
+and a deterministic 100000-step state model.
+
+Limitations
+-----------
+This audit does not claim resistance to arbitrary kernel compromise or to
+tampering with KPatch/the hooked handlers themselves. It proves the stated
+source and artifact properties only.

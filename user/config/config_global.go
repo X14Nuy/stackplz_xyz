@@ -8,7 +8,9 @@ import (
     "os"
     "path/filepath"
     "stackplz/assets"
+    "stackplz/user/kpm"
     "strings"
+    "time"
 
     "golang.org/x/exp/slices"
 )
@@ -48,6 +50,15 @@ type GlobalConfig struct {
     BrkAddr     string
     BrkLib      string
     BrkLen      uint64
+    TaskSource  string
+    BrkBackend  string
+    KPMProfile  string
+    KPMControl  string
+    KPMModule   string
+    MapsFile    string
+    BrkBase     uint64
+    BrkMode     string
+    KPMBindTimeout time.Duration
     LogFile     string
     DumpFile    string
     ParseFile   string
@@ -70,7 +81,17 @@ type GlobalConfig struct {
 }
 
 func NewGlobalConfig() *GlobalConfig {
-    return &GlobalConfig{}
+    profile := kpm.DefaultDeviceProfile()
+    return &GlobalConfig{
+        TaskSource:    "proc",
+        BrkBackend:    "perf",
+        KPMProfile:    profile.ID,
+        KPMControl:    profile.KPatch.ControlPath,
+        KPMModule:     profile.KPatch.ModuleName,
+        BrkLen:        4,
+        BrkMode:       "once",
+        KPMBindTimeout: 10 * time.Second,
+    }
 }
 
 func (this *GlobalConfig) RestoreAssets() error {

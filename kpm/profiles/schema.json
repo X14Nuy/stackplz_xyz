@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stackplz.local/schema/kpm-device-profiles-v1.json",
+  "title": "stackplz KPM device profiles",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "default_profile", "profiles"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "default_profile": {"$ref": "#/$defs/non_empty"},
+    "profiles": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/profile"}
+    }
+  },
+  "$defs": {
+    "non_negative": {"type": "integer", "minimum": 0, "maximum": 2147483647},
+    "non_empty": {"type": "string", "minLength": 1, "maxLength": 256},
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "product", "kernel", "kpatch", "task", "cred", "perf_event", "debug", "layout", "maps", "symbols", "hooks", "quirks"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$"},
+        "product": {"$ref": "#/$defs/product"},
+        "kernel": {"$ref": "#/$defs/kernel"},
+        "kpatch": {"$ref": "#/$defs/kpatch"},
+        "task": {"$ref": "#/$defs/task"},
+        "cred": {"$ref": "#/$defs/cred"},
+        "perf_event": {"$ref": "#/$defs/perf_event"},
+        "debug": {"$ref": "#/$defs/debug"},
+        "layout": {"$ref": "#/$defs/layout"},
+        "maps": {"$ref": "#/$defs/maps"},
+        "symbols": {"$ref": "#/$defs/symbols"},
+        "hooks": {"$ref": "#/$defs/hooks"},
+        "quirks": {"$ref": "#/$defs/quirks"}
+      }
+    },
+    "product": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manufacturer", "model", "device", "fingerprint", "android_release", "sdk", "security_patch"],
+      "properties": {
+        "manufacturer": {"$ref": "#/$defs/non_empty"},
+        "model": {"$ref": "#/$defs/non_empty"},
+        "device": {"$ref": "#/$defs/non_empty"},
+        "fingerprint": {"$ref": "#/$defs/non_empty"},
+        "android_release": {"$ref": "#/$defs/non_empty"},
+        "sdk": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "security_patch": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}
+      }
+    },
+    "kernel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release", "build_id", "ack_commit", "btf_sha256", "page_size", "va_bits", "task_struct_size", "cred_size", "perf_event_size", "task_comm_len", "linux_banner_capacity"],
+      "properties": {
+        "release": {"$ref": "#/$defs/non_empty"},
+        "build_id": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "ack_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "btf_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "page_size": {"type": "integer", "enum": [4096, 16384, 65536]},
+        "va_bits": {"type": "integer", "minimum": 32, "maximum": 52},
+        "task_struct_size": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "cred_size": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "perf_event_size": {"type": "integer", "minimum": 1, "maximum": 65536},
+        "task_comm_len": {"type": "integer", "const": 16},
+        "linux_banner_capacity": {"type": "integer", "minimum": 64, "maximum": 512}
+      }
+    },
+    "kpatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kpver", "kver", "sdk_version", "sdk_commit", "control_path", "module_name", "safe_unload_symbol", "memcpy_kfunc", "memset_kfunc", "kfunc_exports_are_pointers"],
+      "properties": {
+        "kpver": {"$ref": "#/$defs/non_empty"},
+        "kver": {"$ref": "#/$defs/non_empty"},
+        "sdk_version": {"$ref": "#/$defs/non_empty"},
+        "sdk_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "control_path": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^/"},
+        "module_name": {"$ref": "#/$defs/non_empty"},
+        "safe_unload_symbol": {"$ref": "#/$defs/non_empty"},
+        "memcpy_kfunc": {"$ref": "#/$defs/non_empty"},
+        "memset_kfunc": {"$ref": "#/$defs/non_empty"},
+        "kfunc_exports_are_pointers": {"type": "boolean"}
+      }
+    },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["thread_info_flags", "cpu", "state", "usage", "tasks", "mm", "active_mm", "exit_state", "pid", "tgid", "real_parent", "parent", "thread_pid", "pid_links", "thread_node", "start_time", "start_boottime", "real_cred", "cred", "comm", "signal", "perf_event_ctxp", "perf_event_list", "thread", "signal_thread_head"],
+      "properties": {
+        "thread_info_flags": {"$ref": "#/$defs/non_negative"}, "cpu": {"$ref": "#/$defs/non_negative"},
+        "state": {"$ref": "#/$defs/non_negative"}, "usage": {"$ref": "#/$defs/non_negative"},
+        "tasks": {"$ref": "#/$defs/non_negative"}, "mm": {"$ref": "#/$defs/non_negative"},
+        "active_mm": {"$ref": "#/$defs/non_negative"}, "exit_state": {"$ref": "#/$defs/non_negative"},
+        "pid": {"$ref": "#/$defs/non_negative"}, "tgid": {"$ref": "#/$defs/non_negative"},
+        "real_parent": {"$ref": "#/$defs/non_negative"}, "parent": {"$ref": "#/$defs/non_negative"},
+        "thread_pid": {"$ref": "#/$defs/non_negative"}, "pid_links": {"$ref": "#/$defs/non_negative"},
+        "thread_node": {"$ref": "#/$defs/non_negative"}, "start_time": {"$ref": "#/$defs/non_negative"},
+        "start_boottime": {"$ref": "#/$defs/non_negative"}, "real_cred": {"$ref": "#/$defs/non_negative"},
+        "cred": {"$ref": "#/$defs/non_negative"}, "comm": {"$ref": "#/$defs/non_negative"},
+        "signal": {"$ref": "#/$defs/non_negative"}, "perf_event_ctxp": {"$ref": "#/$defs/non_negative"},
+        "perf_event_list": {"$ref": "#/$defs/non_negative"}, "thread": {"$ref": "#/$defs/non_negative"},
+        "signal_thread_head": {"$ref": "#/$defs/non_negative"}
+      }
+    },
+    "cred": {
+      "type": "object", "additionalProperties": false, "required": ["uid"],
+      "properties": {"uid": {"$ref": "#/$defs/non_negative"}}
+    },
+    "perf_event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "attr", "attr_bp_type", "attr_bp_addr", "attr_bp_len", "hw", "arch_address", "arch_trigger", "arch_ctrl", "hw_target", "ctx", "oncpu", "cpu", "owner", "context_task"],
+      "properties": {
+        "state": {"$ref": "#/$defs/non_negative"}, "attr": {"$ref": "#/$defs/non_negative"},
+        "attr_bp_type": {"$ref": "#/$defs/non_negative"}, "attr_bp_addr": {"$ref": "#/$defs/non_negative"},
+        "attr_bp_len": {"$ref": "#/$defs/non_negative"}, "hw": {"$ref": "#/$defs/non_negative"},
+        "arch_address": {"$ref": "#/$defs/non_negative"}, "arch_trigger": {"$ref": "#/$defs/non_negative"},
+        "arch_ctrl": {"$ref": "#/$defs/non_negative"}, "hw_target": {"$ref": "#/$defs/non_negative"},
+        "ctx": {"$ref": "#/$defs/non_negative"}, "oncpu": {"$ref": "#/$defs/non_negative"},
+        "cpu": {"$ref": "#/$defs/non_negative"}, "owner": {"$ref": "#/$defs/non_negative"},
+        "context_task": {"$ref": "#/$defs/non_negative"}
+      }
+    },
+    "debug": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dfr0", "debug_arch", "brps", "wrps", "ctx_cmps", "max_cpus"],
+      "properties": {
+        "dfr0": {"type": "integer", "minimum": 0}, "debug_arch": {"type": "integer", "minimum": 6, "maximum": 15},
+        "brps": {"type": "integer", "minimum": 1, "maximum": 16}, "wrps": {"type": "integer", "minimum": 1, "maximum": 16},
+        "ctx_cmps": {"type": "integer", "minimum": 0, "maximum": 16}, "max_cpus": {"type": "integer", "minimum": 1, "maximum": 64}
+      }
+    },
+    "layout": {
+      "type": "object", "additionalProperties": false,
+      "required": ["work_struct_size", "work_data", "work_entry", "work_func", "work_data_init", "pt_regs_size", "pt_regs_regs", "pt_regs_sp", "pt_regs_pc", "pt_regs_pstate", "per_cpu_pointer_stride"],
+      "properties": {
+        "work_struct_size": {"type": "integer", "minimum": 32, "maximum": 256},
+        "work_data": {"$ref": "#/$defs/non_negative"}, "work_entry": {"$ref": "#/$defs/non_negative"},
+        "work_func": {"$ref": "#/$defs/non_negative"}, "work_data_init": {"type": "integer", "minimum": 0},
+        "pt_regs_size": {"type": "integer", "minimum": 272, "maximum": 1024},
+        "pt_regs_regs": {"$ref": "#/$defs/non_negative"}, "pt_regs_sp": {"$ref": "#/$defs/non_negative"},
+        "pt_regs_pc": {"$ref": "#/$defs/non_negative"}, "pt_regs_pstate": {"$ref": "#/$defs/non_negative"},
+        "per_cpu_pointer_stride": {"type": "integer", "const": 8}
+      }
+    },
+    "maps": {
+      "type": "object", "additionalProperties": false,
+      "required": ["max_snapshot_bytes", "max_chunk_bytes", "seq_file_size", "seq_buf", "seq_size", "seq_from", "seq_count", "seq_pad_until", "seq_private", "proc_maps_private_size", "proc_task", "proc_mm", "proc_iter", "vma_iterator_size", "mas_tree", "mas_index", "mas_last", "mas_node", "mas_status", "mm_struct_size", "mm_mt", "vma_struct_size", "vma_start", "vma_end", "mas_start_node", "ma_start_status", "show_map_vma_args"],
+      "properties": {
+        "max_snapshot_bytes": {"type": "integer", "minimum": 4096, "maximum": 16777216},
+        "max_chunk_bytes": {"type": "integer", "minimum": 1, "maximum": 1536},
+        "seq_file_size": {"type": "integer", "minimum": 64, "maximum": 256},
+        "seq_buf": {"$ref": "#/$defs/non_negative"}, "seq_size": {"$ref": "#/$defs/non_negative"},
+        "seq_from": {"$ref": "#/$defs/non_negative"}, "seq_count": {"$ref": "#/$defs/non_negative"},
+        "seq_pad_until": {"$ref": "#/$defs/non_negative"}, "seq_private": {"$ref": "#/$defs/non_negative"},
+        "proc_maps_private_size": {"type": "integer", "minimum": 32, "maximum": 512},
+        "proc_task": {"$ref": "#/$defs/non_negative"}, "proc_mm": {"$ref": "#/$defs/non_negative"},
+        "proc_iter": {"$ref": "#/$defs/non_negative"},
+        "vma_iterator_size": {"type": "integer", "minimum": 32, "maximum": 256},
+        "mas_tree": {"$ref": "#/$defs/non_negative"}, "mas_index": {"$ref": "#/$defs/non_negative"},
+        "mas_last": {"$ref": "#/$defs/non_negative"}, "mas_node": {"$ref": "#/$defs/non_negative"},
+        "mas_status": {"$ref": "#/$defs/non_negative"},
+        "mm_struct_size": {"type": "integer", "minimum": 64, "maximum": 65536},
+        "mm_mt": {"$ref": "#/$defs/non_negative"},
+        "vma_struct_size": {"type": "integer", "minimum": 32, "maximum": 4096},
+        "vma_start": {"$ref": "#/$defs/non_negative"}, "vma_end": {"$ref": "#/$defs/non_negative"},
+        "mas_start_node": {"type": "integer", "minimum": 1},
+        "ma_start_status": {"type": "integer", "minimum": 0, "maximum": 7},
+        "show_map_vma_args": {"type": "integer", "const": 2}
+      }
+    },
+    "symbols": {
+      "type": "object", "additionalProperties": false,
+      "required": ["linux_banner", "init_task", "finish_task_switch", "do_exit", "breakpoint_handler", "watchpoint_handler", "single_step_handler", "bp_on_reg", "wp_on_reg", "per_cpu_offset", "nr_cpu_ids", "system_unbound_wq", "queue_work_on", "flush_work", "synchronize_rcu_tasks", "schedule_on_each_cpu", "ktime_get_mono_fast_ns", "copy_from_kernel_nofault", "show_map_vma", "find_vma", "mas_walk", "get_task_mm", "mmput", "mmap_read_lock_killable", "mmap_read_unlock", "rust_helper_get_task_struct", "rust_helper_put_task_struct", "vmalloc_noprof", "vfree"],
+      "properties": {
+        "linux_banner": {"$ref": "#/$defs/non_empty"}, "init_task": {"$ref": "#/$defs/non_empty"},
+        "finish_task_switch": {"$ref": "#/$defs/non_empty"}, "do_exit": {"$ref": "#/$defs/non_empty"},
+        "breakpoint_handler": {"$ref": "#/$defs/non_empty"}, "watchpoint_handler": {"$ref": "#/$defs/non_empty"},
+        "single_step_handler": {"$ref": "#/$defs/non_empty"}, "bp_on_reg": {"$ref": "#/$defs/non_empty"},
+        "wp_on_reg": {"$ref": "#/$defs/non_empty"}, "per_cpu_offset": {"$ref": "#/$defs/non_empty"},
+        "nr_cpu_ids": {"$ref": "#/$defs/non_empty"}, "system_unbound_wq": {"$ref": "#/$defs/non_empty"},
+        "queue_work_on": {"$ref": "#/$defs/non_empty"}, "flush_work": {"$ref": "#/$defs/non_empty"},
+        "synchronize_rcu_tasks": {"$ref": "#/$defs/non_empty"},
+        "schedule_on_each_cpu": {"$ref": "#/$defs/non_empty"},
+        "ktime_get_mono_fast_ns": {"$ref": "#/$defs/non_empty"},
+        "copy_from_kernel_nofault": {"$ref": "#/$defs/non_empty"},
+        "show_map_vma": {"$ref": "#/$defs/non_empty"}, "find_vma": {"$ref": "#/$defs/non_empty"},
+        "mas_walk": {"$ref": "#/$defs/non_empty"}, "get_task_mm": {"$ref": "#/$defs/non_empty"},
+        "mmput": {"$ref": "#/$defs/non_empty"},
+        "mmap_read_lock_killable": {"$ref": "#/$defs/non_empty"},
+        "mmap_read_unlock": {"$ref": "#/$defs/non_empty"},
+        "rust_helper_get_task_struct": {"$ref": "#/$defs/non_empty"},
+        "rust_helper_put_task_struct": {"$ref": "#/$defs/non_empty"},
+        "vmalloc_noprof": {"$ref": "#/$defs/non_empty"}, "vfree": {"$ref": "#/$defs/non_empty"}
+      }
+    },
+    "hooks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["finish_task_switch_args", "do_exit_args", "breakpoint_handler_args", "watchpoint_handler_args", "single_step_handler_args"],
+      "properties": {
+        "finish_task_switch_args": {"type": "integer", "enum": [1, 3]},
+        "do_exit_args": {"type": "integer", "enum": [1, 3]},
+        "breakpoint_handler_args": {"type": "integer", "enum": [1, 3]},
+        "watchpoint_handler_args": {"type": "integer", "enum": [1, 3]},
+        "single_step_handler_args": {"type": "integer", "enum": [1, 3]}
+      }
+    },
+    "quirks": {
+      "type": "object", "additionalProperties": false,
+      "required": ["control_under_rcu", "unload_requires_quiescent", "cpu_hotplug_while_armed", "safe_unload_required", "linux_banner_prefix_ok"],
+      "properties": {
+        "control_under_rcu": {"type": "boolean"},
+        "unload_requires_quiescent": {"type": "boolean"},
+        "cpu_hotplug_while_armed": {"type": "boolean"},
+        "safe_unload_required": {"type": "boolean"},
+        "linux_banner_prefix_ok": {"type": "boolean"}
+      }
+    }
+  }
+}

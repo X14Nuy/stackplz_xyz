@@ -24,6 +24,55 @@ stackplz(stack please)是一款基于eBPF的堆栈追踪工具，目前仅适用
 - Apple M系列设备 + 安卓官方arm64模拟器
 - 有root权限，内核版本5.10+的云真机也可以
 
+## KPM取证观察扩展（显式启用）
+
+仓库新增了一个独立的KPatch-Next KPM，用于授权设备上观察仍会被调度、但不出现在
+`ps`/`/proc`视图中的任务，以及只读审计和直接使用ARM64硬件调试寄存器。
+原有默认值没有改变：目标来源仍为`proc`，硬件断点后端仍为`perf`；只有显式
+设置`--task-source=kpm`或`--brk-backend=kpm-direct`才会进入新路径。
+
+KPM不会由stackplz自动加载或持久化，并且只接受精确设备配置。当前 profile 已在
+OnePlus PLK110 / Android 16 / Linux 6.12.23 真机完成 syscall、uprobe、堆栈符号化、
+perf 断点、KPM-direct 断点和隐藏进程 maps 重建测试。构建、限制、清理和适配方法见
+[KPM取证观察器文档](./docs/KPM_FORENSICS.md)，原始结果见
+[真机测试报告](./artifacts/kpm/device-test-report-20260831.md)。
+
+### 本仓库附带产物
+
+| 文件 | 用途 |
+| --- | --- |
+| `artifacts/kpm/stackplz-maps-arm64` | 已在 PLK110 验证的 ARM64 stackplz |
+| `artifacts/kpm/stackplz-kpm-maps.kpm` | 带隐藏进程 maps 重建能力的 KPM |
+| `artifacts/kpm/device-vmlinux.btf` | 本次测试内核的完整 BTF 证据文件 |
+| `artifacts/kpm/SHA256SUMS` | 发布制品和 profile 哈希 |
+
+部署已验证产物：
+
+```bash
+adb push artifacts/kpm/stackplz-maps-arm64 /data/local/tmp/stackplz
+adb push artifacts/kpm/stackplz-kpm-maps.kpm /data/local/tmp/stackplz-kpm.kpm
+adb shell su 0 chmod 0755 /data/local/tmp/stackplz
+adb shell su 0 /data/adb/modules/KPatch-Next/bin/kpatch kpm load \
+  /data/local/tmp/stackplz-kpm.kpm \
+  "profile=oneplus-plk110-a16-b4999618-d05"
+```
+
+普通可见进程继续使用原来的 `--task-source=proc`。对于已知数值 PID、但无法通过
+`ps` 或 `/proc/<pid>` 查看 maps 的进程，使用：
+
+```bash
+adb shell su 0 /data/local/tmp/stackplz \
+  --pid 31337 \
+  --task-source kpm \
+  --kpm-profile oneplus-plk110-a16-b4999618-d05 \
+  --btf --syscall openat
+```
+
+当前实现会在 KPM 绑定后通过 profile 中的 `show_map_vma` 和 VMA ABI 重建 maps，
+所以 uprobe、`--stack`、`--brk-lib`、perf 断点和 KPM-direct 断点不再要求提前提供
+`--maps-file`。如果目标内核没有匹配 profile，必须重新提取 BTF/符号和结构偏移并
+增加新配置；不要套用相近内核的 profile。
+
 # 使用
 
 从Releases或者Github Action下载最新预编译好的二进制文件即可

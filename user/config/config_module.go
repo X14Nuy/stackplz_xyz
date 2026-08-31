@@ -15,6 +15,7 @@ import (
     "strconv"
     "strings"
     "sync"
+    "time"
 
     "github.com/cilium/ebpf/perf"
     "golang.org/x/exp/slices"
@@ -785,6 +786,15 @@ type ModuleConfig struct {
     BrkLen      uint64
     BrkType     uint32
     BrkKernel   bool
+    TaskSource  string
+    BrkBackend  string
+    KPMProfile  string
+    KPMControl  string
+    KPMModule   string
+    MapsFile    string
+    BrkBase     uint64
+    BrkMode     string
+    KPMBindTimeout time.Duration
     Color       bool
     DumpHandle  *os.File
     FmtJson     bool
@@ -857,6 +867,15 @@ func (this *ModuleConfig) InitCommonConfig(gconfig *GlobalConfig) {
     this.ShowPC = gconfig.ShowPC
     this.ShowTime = gconfig.ShowTime
     this.ShowUid = gconfig.ShowUid
+    this.TaskSource = gconfig.TaskSource
+    this.BrkBackend = gconfig.BrkBackend
+    this.KPMProfile = gconfig.KPMProfile
+    this.KPMControl = gconfig.KPMControl
+    this.KPMModule = gconfig.KPMModule
+    this.MapsFile = gconfig.MapsFile
+    this.BrkBase = gconfig.BrkBase
+    this.BrkMode = gconfig.BrkMode
+    this.KPMBindTimeout = gconfig.KPMBindTimeout
 
     this.AutoResume = gconfig.AutoResume
     this.KillSignal = util.ParseSignal(gconfig.KillSignal)

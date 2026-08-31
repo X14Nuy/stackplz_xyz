@@ -64,3 +64,41 @@ source ~/.bashrc
 ```bash
 adb push bin/stackplz /data/local/tmp
 ```
+
+## KPM取证扩展
+
+KPM是独立的、默认关闭的可选制品；它不会改变普通stackplz构建和默认
+`proc + perf`行为。先阅读[KPM操作说明](./KPM_FORENSICS.md)和
+[KPM构建说明](../kpm/README.md)。
+
+主机侧生成检查和C测试：
+
+```bash
+make kpm-generate-check
+make kpm-host-test
+```
+
+使用固定KPatch-Next SDK和AArch64交叉工具链构建：
+
+```bash
+export KP_DIR=/absolute/path/to/KPatch-Next
+make -C kpm clean
+make -C kpm \
+  TARGET_COMPILE=aarch64-linux-gnu- \
+  KP_DIR="$KP_DIR" \
+  all
+```
+
+对最终KPM再次执行独立制品门禁：
+
+```bash
+make -C kpm/scripts verify \
+  ARTIFACT=../stackplz-kpm.kpm \
+  KP_DIR="$KP_DIR" \
+  TARGET_COMPILE=aarch64-linux-gnu-
+```
+
+该门禁会核对精确KPatch提交和安全卸载补丁、ELF架构/节、固定导入白名单及
+KPatch导出证明，并从反汇编中确认直接调试寄存器访问。当前 profile 的物理设备
+结果见[真机测试报告](../artifacts/kpm/device-test-report-20260831.md)和
+[验收清单](../tests/kpm/device_acceptance.md)；其他 profile 仍必须单独验收。

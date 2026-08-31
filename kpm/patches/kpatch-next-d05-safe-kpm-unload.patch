@@ -1,0 +1,97 @@
+diff --git a/kernel/patch/module/module.c b/kernel/patch/module/module.c
+index 087cd4b..ec0de7e 100644
+--- a/kernel/patch/module/module.c
++++ b/kernel/patch/module/module.c
+@@ -395,6 +395,9 @@ static int elf_header_check(struct load_info *info)
+ struct module modules = { 0 };
+ static spinlock_t module_lock;
+
++int kpm_safe_unload_v1 = 1;
++KP_EXPORT_SYMBOL(kpm_safe_unload_v1);
++
+ long load_module(const void *data, int len, const char *args, const char *event, void *__user reserved)
+ {
+     struct load_info load_info = { .len = len, .hdr = data };
+@@ -452,22 +455,33 @@ out:
+     return rc;
+ }
+
+-// todo: lock
+ long unload_module(const char *name, void *__user reserved)
+ {
+     if (!name) return -EINVAL;
+     logkfe("name: %s\n", name);
+
+-    rcu_read_lock();
+     long rc = 0;
++    struct module *mod;
+
+-    struct module *mod = find_module(name);
++    rcu_read_lock();
++    mod = find_module(name);
+     if (!mod) {
+         rc = -ENOENT;
+-        goto out;
++        rcu_read_unlock();
++        return rc;
+     }
+-    list_del(&mod->list);
++    list_del_rcu(&mod->list);
++    rcu_read_unlock();
++
++    /* No ctl callback that found this image may race its exit or release. */
++    synchronize_rcu();
+     rc = (*mod->exit)(reserved);
++    if (rc) {
++        rcu_read_lock();
++        list_add_tail_rcu(&mod->list, &modules.list);
++        rcu_read_unlock();
++        return rc;
++    }
+
+     if (mod->args) kvfree(mod->args);
+     if (mod->ctl_args) kvfree(mod->ctl_args);
+@@ -476,9 +490,6 @@ long unload_module(const char *name, void *__user reserved)
+     kvfree(mod);
+
+     logkfi("name: %s, rc: %d\n", name, rc);
+-
+-out:
+-    rcu_read_unlock();
+     return rc;
+ }
+
+@@ -525,6 +536,7 @@ out:
+ long module_control0(const char *name, const char *ctl_args, char *__user out_msg, int outlen)
+ {
+     if (!name || !ctl_args) return -EINVAL;
++    char *ctl_copy = 0;
+     int args_len = strlen(ctl_args);
+     if (args_len <= 0) return -EINVAL;
+
+@@ -545,20 +557,18 @@ long module_control0(const char *name, const char *ctl_args, char *__user out_ms
+         goto out;
+     }
+
+-    if (mod->ctl_args) kvfree(mod->ctl_args);
+-
+-    mod->ctl_args = vmalloc(args_len + 1);
+-    if (!mod->ctl_args) {
++    ctl_copy = vmalloc(args_len + 1);
++    if (!ctl_copy) {
+         rc = -ENOMEM;
+         goto out;
+     }
+
+-    strcpy(mod->ctl_args, ctl_args);
+-
+-    rc = (*mod->ctl0)(mod->ctl_args, out_msg, outlen);
++    strcpy(ctl_copy, ctl_args);
++    rc = (*mod->ctl0)(ctl_copy, out_msg, outlen);
+
+     logkfi("name: %s, rc: %d\n", name, rc);
+ out:
++    if (ctl_copy) kvfree(ctl_copy);
+     rcu_read_unlock();
+     return rc;
+ }

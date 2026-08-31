@@ -2,6 +2,8 @@ CMD_CLANG ?= clang
 CMD_GO ?= go
 CMD_RM ?= rm
 CMD_BPFTOOL ?= bpftool
+PYTHON ?= python3
+ARTIFACT ?= kpm/stackplz-kpm.kpm
 ASSETS_PATH ?= user/assets
 
 DEBUG_PRINT ?=
@@ -91,3 +93,18 @@ assets:
 .PHONY: build
 build:
 	GOARCH=arm64 GOOS=android CGO_ENABLED=1 CC=aarch64-linux-android29-clang $(CMD_GO) build $(BUILD_TAGS) -ldflags "-w -s -extldflags '-Wl,--hash-style=sysv'" -o bin/stackplz_$(TARGET_ARCH) .
+
+.PHONY: kpm-host-test
+kpm-host-test:
+	$(MAKE) -C kpm/tests clean
+	$(MAKE) -C kpm/tests MODEL_STEPS=100000 test
+	$(MAKE) -C kpm/tests MODEL_STEPS=100000 sanitize
+
+.PHONY: kpm-generate-check
+kpm-generate-check:
+	$(PYTHON) tools/gen_kpm_profiles.py --check
+	$(PYTHON) -m unittest discover -s tools/tests -v
+
+.PHONY: kpm-verify-artifact
+kpm-verify-artifact:
+	$(MAKE) -C kpm/scripts verify ARTIFACT="$(abspath $(ARTIFACT))" KP_DIR="$(abspath $(KP_DIR))" TARGET_COMPILE="$(TARGET_COMPILE)" PYTHON="$(PYTHON)"

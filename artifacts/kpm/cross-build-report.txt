@@ -1,0 +1,97 @@
+stackplz KPM cross-build report
+Generated: 2026-08-30 Asia/Shanghai
+Source content: uncommitted workspace snapshot based on Git baseline 62fc9e8
+Physical device runtime: NOT TESTED (device unavailable 2026-08-30)
+
+Pinned inputs
+-------------
+KPatch-Next commit:
+  0fe6d142266b80e5aa445a7ea1534f88a8f33a35
+KPatch ABI:
+  kpver=d05, kver=60c17
+KPatch safe-unload patch SHA-256:
+  194e84143fd637d21a318307b7f4bb6409a79a962c038e0e90f1fc002d15b5c4
+Device profile table SHA-256:
+  6d0bebf056e9ebba771ab933bffa5ca4f6d61c8986f15b0cf9d9f82f85063510
+Custom cilium/ebpf sibling commit:
+  61cbc4a37e8264c3788494a74dcec992c636b918
+Custom ehids/ebpfmanager sibling commit:
+  f0f47969312f26ab62d9ef25a01ed0aafc128e67
+libbpf source commit:
+  f7081a6baf3f54949aacb8c2fc11bb30783b83e9
+bpftool:
+  v7.2.0-snapshot.0, libbpf v1.2
+  SHA-256 f54f5a73e5d5edad8e15148271f10585b04ab5a54a4aa637bdc74ca465242971
+Build BTF inputs:
+  a12-5.10-arm64.btf
+    a18adaa1a66108462e936a666acbe1a7e3fc124e74109d59aabcfacdc5e5aac7
+  rock5b-5.10-f9d1b1529-arm64.btf
+    16391a6bce3bee4dee222237349c8703e0a70632ba3d8468dc441ce37060e18a
+
+Toolchains
+----------
+Go: go1.27.0 linux/amd64
+AArch64 GNU GCC/binutils: Ubuntu 11.4.0
+Android NDK: r29
+Android clang:
+  version 21.0.0, Android build 13989888
+
+KPM build
+---------
+Command:
+  make -C kpm clean
+  make -C kpm TARGET_COMPILE=aarch64-linux-gnu- \
+    KP_DIR=/path/to/KPatch-Next all
+
+Result: PASS with -Wall -Wextra -Werror.
+The strict checker proved the pinned KPatch exports for every import.
+
+Independent gate:
+  make kpm-verify-artifact KP_DIR=/path/to/KPatch-Next \
+    TARGET_COMPILE=aarch64-linux-gnu-
+
+Result:
+  KPM_ARTIFACT_VERIFIED=1
+  bytes=81336
+  sha256=808264a7d4add701c5d0d871a0bc0aed0fd37a399cbc7344ca74215134a01448
+  format=ELF64 little-endian AArch64 REL
+  direct_register_families=dbgbvr,dbgbcr,dbgwvr,dbgwcr,mdscr_el1
+
+The safe-unload patch passed exact reverse-apply checking. Patched
+kernel/patch/module/module.c also compiled independently with -Werror, and:
+  0000000000000000 D kpm_safe_unload_v1
+  0000000000000000 d __kp_symbol_kpm_safe_unload_v1
+
+stackplz Android build
+----------------------
+The original production pipeline generated stack.o, syscall.o, perf_mmap.o,
+both minimal BTF files, and a real assets/ebpf_probe.go before linking.
+
+Command:
+  PATH=/opt/android-ndk-r29/toolchains/llvm/prebuilt/linux-x86_64/bin:\
+       /path/to/go/bin:$PATH \
+  GOPROXY=off make
+
+Result: PASS.
+Artifact:
+  bin/stackplz_arm64
+  10118384 bytes
+  ELF64 little-endian PIE, ARM AArch64
+  interpreter /system/bin/linker64
+  stripped
+  sha256=8f528bb9d96c6556727fcc163091059cb2cc580b7ff4c9cee9746251300bcf83
+
+Two PT_REGS_PARM6 macro-redefinition warnings came from the original
+src/common/arch.h versus the current official libbpf header. They did not
+become errors and are unrelated to the KPM implementation.
+
+Dependency preparation note
+---------------------------
+The repository's AOSP libbpf clone endpoint refused the VM connection.
+The build used the official upstream libbpf GitHub repository at the exact
+commit recorded above. No dependency version is left implicit.
+
+Claim boundary
+--------------
+Both ARM64 artifacts are structurally valid and reproducibly built. Neither
+artifact has been loaded or executed on the PLK110 in this session.

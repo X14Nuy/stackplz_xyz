@@ -123,7 +123,7 @@ func (this *PackageInfos) FindPackageByPid(uid uint32) (bool, PackageInfo) {
 	return false, PackageInfo{}
 }
 
-func (this *PackageInfos) FindUidByPid(pid uint32) uint32 {
+func (this *PackageInfos) FindUidByPid(pid uint32) (uint32, error) {
 	// 安卓上检查进程架构的两种方法
 	// 1. 检查 maps 中 linker 的名字 => linker or linker64
 	// 2. 检查 maps 中 app_process 的名字 => app_process or app_process64
@@ -138,15 +138,23 @@ func (this *PackageInfos) FindUidByPid(pid uint32) uint32 {
 
 	// pid_str := strconv.FormatUint(uint64(pid), 10)
 	// lines, err := RunCommand("sh", "-c", fmt.Sprintf("uid=$(ps -o user= -p %s ) && id -u $uid", pid_str))
-	lines, err := RunCommand("sh", "-c", fmt.Sprintf("ps -o uid= -p %d", pid))
+	lines, err := RunCommand("ps", "-o", "uid=", "-p", strconv.FormatUint(uint64(pid), 10))
 	if err != nil {
-		panic(err)
+		return 0, fmt.Errorf("find uid for pid %d with ps: %w", pid, err)
 	}
-	value, err := strconv.ParseUint(lines, 10, 32)
+	return parseUIDFromPS(pid, lines)
+}
+
+func parseUIDFromPS(pid uint32, output string) (uint32, error) {
+	output = strings.TrimSpace(output)
+	if output == "" {
+		return 0, fmt.Errorf("find uid for pid %d with ps: empty output", pid)
+	}
+	value, err := strconv.ParseUint(output, 10, 32)
 	if err != nil {
-		panic(fmt.Sprintf("find uid by pid failed, are you sure pid=%d exists ?", pid))
+		return 0, fmt.Errorf("parse uid for pid %d from %q: %w", pid, output, err)
 	}
-	return uint32(value)
+	return uint32(value), nil
 }
 
 func Get_PackageInfos() *PackageInfos {

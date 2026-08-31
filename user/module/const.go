@@ -13,6 +13,7 @@ const (
     MODULE_NAME_BRK     = "BrkMod"
     MODULE_NAME_STACK   = "StackMod"
     MODULE_NAME_SYSCALL = "SyscallMod"
+    MODULE_NAME_KPM_BRK = "KPMBrkMod"
 )
 
 const (

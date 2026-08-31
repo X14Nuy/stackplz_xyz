@@ -1,0 +1,52 @@
+stackplz KPM ELF/disassembly audit
+Generated: 2026-08-30
+Artifact SHA-256:
+  808264a7d4add701c5d0d871a0bc0aed0fd37a399cbc7344ca74215134a01448
+Artifact size:
+  81336 bytes
+
+ELF header
+----------
+Class:   ELF64
+Data:    2's complement, little endian
+Type:    REL (Relocatable file)
+Machine: AArch64
+
+Required KPM sections
+---------------------
+.kpm.info  present
+.kpm.init  present
+.kpm.ctl0  present
+.kpm.exit  present
+
+Direct system-register instruction counts
+-----------------------------------------
+dbgbvr=32
+dbgbcr=32
+dbgwvr=32
+dbgwcr=32
+mdscr_el1=4
+
+Representative disassembly
+--------------------------
+  426c: d5100254  msr mdscr_el1, x20
+  42d4: d5300241  mrs x1, mdscr_el1
+  4500: d5300082  mrs x2, dbgbvr0_el1
+  4658: d5100081  msr dbgbvr0_el1, x1
+
+The complete constant-index accessors cover up to the architectural maximum
+compiled slots. The selected PLK110 profile limits runtime use to its proven
+six BRPs and four WRPs.
+
+Forbidden symbol check
+----------------------
+aarch64-linux-gnu-nm -a produced no match for:
+  perf_event_create_kernel_counter
+  register_user_hw_breakpoint
+  register_hw_breakpoint
+  perf_event_open
+
+The independent verify_artifact.sh gate passed the disassembly families,
+ELF metadata, section list, generated-profile freshness, import allowlist,
+pinned KPatch commit, exact safe-unload patch, size limit, and SDK export
+proofs.
